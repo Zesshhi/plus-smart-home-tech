@@ -40,4 +40,23 @@ protocol SensorEventProtocol {
             TemperatureSensorAvro
         } payload;
     }
+
+    record SensorStateAvro {
+        @logicalType("timestamp-millis")
+        long timestamp;
+        union {
+            ClimateSensorAvro,
+            LightSensorAvro,
+            MotionSensorAvro,
+            SwitchSensorAvro,
+            TemperatureSensorAvro
+        } data;
+    }
+
+    record SensorsSnapshotAvro {
+        string hubId;
+        @logicalType("timestamp-millis")
+        long timestamp;
+        map<SensorStateAvro> sensorsState;
+    }
 }
