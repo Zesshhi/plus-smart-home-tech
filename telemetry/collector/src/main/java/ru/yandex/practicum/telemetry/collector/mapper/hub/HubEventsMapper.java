@@ -24,6 +24,6 @@ public class HubEventsMapper {
             return hubEventMappers.get(event.getPayloadCase()).mapToHubEventAvro(event);
         }
 
-        throw new RuntimeException("Unknown hub event type:  " + event.getPayloadCase());
+        throw new UnknownHubEventTypeException(event.getPayloadCase().name());
     }
 }

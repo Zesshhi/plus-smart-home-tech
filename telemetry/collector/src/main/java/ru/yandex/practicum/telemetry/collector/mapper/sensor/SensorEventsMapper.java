@@ -24,6 +24,6 @@ public class SensorEventsMapper {
             return sensorEventMappers.get(sensorEvent.getPayloadCase()).mapToSensorEventAvro(sensorEvent);
         }
 
-        throw new RuntimeException("Unknown sensor event type:  " + sensorEvent.getPayloadCase());
+        throw new UnknownSensorEventTypeException(sensorEvent.getPayloadCase().name());
     }
 }

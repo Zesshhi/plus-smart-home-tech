@@ -137,7 +137,6 @@ public class AnalyzerServiceImpl implements AnalyzerService {
             SensorStateAvro state = sensorsState.get(sc.getSensor().getId());
             if (state == null) return false;
             Integer sensorValue = extractSensorValue(sc.getCondition().getType(), state.getData());
-            if (sensorValue == null) return false;
             return checkOperation(sc.getCondition().getOperation(), sensorValue, sc.getCondition().getValue());
         });
     }
@@ -165,22 +164,37 @@ public class AnalyzerServiceImpl implements AnalyzerService {
 
     private Integer extractSensorValue(ConditionType type, Object data) {
         return switch (type) {
-            case MOTION -> data instanceof MotionSensorAvro m ? (m.getMotion() ? 1 : 0) : null;
-            case LUMINOSITY -> data instanceof LightSensorAvro l ? l.getLuminosity() : null;
-            case SWITCH -> data instanceof SwitchSensorAvro s ? (s.getState() ? 1 : 0) : null;
+            case MOTION -> {
+                if (data instanceof MotionSensorAvro m) yield m.getMotion() ? 1 : 0;
+                throw new IllegalArgumentException("Неподходящий тип данных для MOTION: " + data.getClass().getSimpleName());
+            }
+            case LUMINOSITY -> {
+                if (data instanceof LightSensorAvro l) yield l.getLuminosity();
+                throw new IllegalArgumentException("Неподходящий тип данных для LUMINOSITY: " + data.getClass().getSimpleName());
+            }
+            case SWITCH -> {
+                if (data instanceof SwitchSensorAvro s) yield s.getState() ? 1 : 0;
+                throw new IllegalArgumentException("Неподходящий тип данных для SWITCH: " + data.getClass().getSimpleName());
+            }
             case TEMPERATURE -> switch (data) {
                 case TemperatureSensorAvro t -> t.getTemperatureC();
                 case ClimateSensorAvro c -> c.getTemperatureC();
-                default -> null;
+                default -> throw new IllegalArgumentException("Неподходящий тип данных для TEMPERATURE: " + data.getClass().getSimpleName());
             };
-            case CO2LEVEL -> data instanceof ClimateSensorAvro c ? c.getCo2Level() : null;
-            case HUMIDITY -> data instanceof ClimateSensorAvro c ? c.getHumidity() : null;
+            case CO2LEVEL -> {
+                if (data instanceof ClimateSensorAvro c) yield c.getCo2Level();
+                throw new IllegalArgumentException("Неподходящий тип данных для CO2LEVEL: " + data.getClass().getSimpleName());
+            }
+            case HUMIDITY -> {
+                if (data instanceof ClimateSensorAvro c) yield c.getHumidity();
+                throw new IllegalArgumentException("Неподходящий тип данных для HUMIDITY: " + data.getClass().getSimpleName());
+            }
         };
     }
 
-    private boolean checkOperation(ConditionOperation op, int sensorValue, int conditionValue) {
+    private boolean checkOperation(ConditionOperation op, Integer sensorValue, Integer conditionValue) {
         return switch (op) {
-            case EQUALS -> sensorValue == conditionValue;
+            case EQUALS -> sensorValue.equals(conditionValue);
             case GREATER_THAN -> sensorValue > conditionValue;
             case LOWER_THAN -> sensorValue < conditionValue;
         };
@@ -190,6 +204,6 @@ public class AnalyzerServiceImpl implements AnalyzerService {
         Object value = condition.getValue();
         if (value instanceof Integer i) return i;
         if (value instanceof Boolean b) return b ? 1 : 0;
-        return null;
+        throw new IllegalArgumentException("Неподдерживаемый тип значения условия: " + value.getClass().getSimpleName());
     }
 }

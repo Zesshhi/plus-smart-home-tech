@@ -1,43 +1,37 @@
 package ru.yandex.practicum.telemetry.aggregator.service;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SensorStateAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SensorsSnapshotAvro;
 import ru.yandex.practicum.telemetry.aggregator.kafka.KafkaClient;
+import ru.yandex.practicum.telemetry.aggregator.kafka.KafkaClientProperties;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class AggregatorServiceImpl implements AggregatorService {
     private final KafkaClient kafkaClient;
+    private final KafkaClientProperties kafkaProperties;
 
-    public AggregatorServiceImpl(KafkaClient kafkaClient) {
-        this.kafkaClient = kafkaClient;
-    }
     private final Map<String, SensorsSnapshotAvro> snapshots = new HashMap<>();
-
-    @Value("${telemetry.aggregator.kafka.consumer.topic.snapshots}")
-    private String snapshotsTopic;
 
     @Override
     public void aggregateSensorEvent(SensorEventAvro sensorEvent) {
-        Optional<SensorsSnapshotAvro> snapshot = this.updateState(sensorEvent);
-        if (snapshot.isPresent()) {
-            SensorsSnapshotAvro snap = snapshot.get();
-            kafkaClient.getProducer().send(new ProducerRecord<>(
-                    snapshotsTopic,
-                    null,
-                    snap.getTimestamp().toEpochMilli(),
-                    snap.getHubId(),
-                    snap
-            ));
-
-        }
+        this.updateState(sensorEvent).ifPresent(snap ->
+                kafkaClient.getProducer().send(new ProducerRecord<>(
+                        kafkaProperties.getConsumer().getTopic().getSnapshots(),
+                        null,
+                        snap.getTimestamp().toEpochMilli(),
+                        snap.getHubId(),
+                        snap
+                ))
+        );
     }
 
     private Optional<SensorsSnapshotAvro> updateState(SensorEventAvro sensorEvent) {
