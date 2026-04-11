@@ -43,8 +43,8 @@ public class ShoppingStoreController implements ShoppingStoreClient {
     }
 
     @Override
-    @DeleteMapping("/{productId}")
-    public boolean removeProductFromStore(@PathVariable UUID productId) {
+    @PostMapping("/removeProductFromStore")
+    public boolean removeProductFromStore(@RequestBody UUID productId) {
         return shoppingStoreService.removeProduct(productId);
     }
 
