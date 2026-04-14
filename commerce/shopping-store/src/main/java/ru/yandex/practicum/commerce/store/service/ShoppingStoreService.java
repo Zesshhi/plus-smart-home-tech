@@ -36,7 +36,7 @@ public class ShoppingStoreService {
                 .description(dto.getDescription())
                 .imageSrc(dto.getImageSrc())
                 .quantityState(dto.getQuantityState())
-                .productState(ProductState.ACTIVE)
+                .productState(dto.getProductState())
                 .productCategory(dto.getProductCategory())
                 .price(dto.getPrice())
                 .build();

@@ -1,6 +1,7 @@
 package ru.yandex.practicum.commerce.warehouse.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.commerce.client.ShoppingStoreClient;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WarehouseService {
@@ -115,7 +117,11 @@ public class WarehouseService {
             state = QuantityState.MANY;
         }
 
-        shoppingStoreClient.setQuantityState(
-                new SetProductQuantityStateRequest(product.getProductId(), state));
+        try {
+            shoppingStoreClient.setQuantityState(product.getProductId(), state);
+        } catch (Exception e) {
+            log.error("Failed to update quantity state in store for product {}: {}",
+                    product.getProductId(), e.getMessage());
+        }
     }
 }

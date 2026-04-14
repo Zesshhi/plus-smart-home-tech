@@ -43,7 +43,9 @@ public class ShoppingStoreController {
     }
 
     @PostMapping("/quantityState")
-    public boolean setQuantityState(@RequestBody SetProductQuantityStateRequest request) {
+    public boolean setQuantityState(@RequestParam UUID productId,
+                                    @RequestParam QuantityState quantityState) {
+        SetProductQuantityStateRequest request = new SetProductQuantityStateRequest(productId, quantityState);
         return shoppingStoreService.setQuantityState(request);
     }
 }
