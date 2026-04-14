@@ -13,7 +13,7 @@ public interface WarehouseClient {
     @PutMapping
     void newProductInWarehouse(@RequestBody NewProductInWarehouseRequest request);
 
-    @PostMapping
+    @PostMapping("/add")
     void addProductToWarehouse(@RequestBody AddProductToWarehouseRequest request);
 
     @PostMapping("/check")

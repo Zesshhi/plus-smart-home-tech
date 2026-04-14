@@ -1,7 +1,8 @@
 package ru.yandex.practicum.commerce.store.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.commerce.dto.*;
@@ -9,7 +10,6 @@ import ru.yandex.practicum.commerce.exception.ProductNotFoundException;
 import ru.yandex.practicum.commerce.store.model.Product;
 import ru.yandex.practicum.commerce.store.repository.ProductRepository;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -19,10 +19,9 @@ public class ShoppingStoreService {
     private final ProductRepository productRepository;
 
     @Transactional(readOnly = true)
-    public List<ProductDto> getProducts(ProductCategory category, int page, int size) {
-        return productRepository.findAllByProductCategory(category, PageRequest.of(page, size))
-                .map(this::toDto)
-                .getContent();
+    public Page<ProductDto> getProducts(ProductCategory category, Pageable pageable) {
+        return productRepository.findAllByProductCategory(category, pageable)
+                .map(this::toDto);
     }
 
     @Transactional(readOnly = true)

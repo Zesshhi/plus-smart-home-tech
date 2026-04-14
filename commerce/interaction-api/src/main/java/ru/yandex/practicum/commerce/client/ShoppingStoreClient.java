@@ -18,10 +18,10 @@ public interface ShoppingStoreClient {
     @GetMapping("/{productId}")
     ProductDto getProduct(@PathVariable UUID productId);
 
-    @PostMapping
+    @PutMapping
     ProductDto createProduct(@RequestBody ProductDto productDto);
 
-    @PutMapping
+    @PostMapping
     ProductDto updateProduct(@RequestBody ProductDto productDto);
 
     @PostMapping("/removeProductFromStore")

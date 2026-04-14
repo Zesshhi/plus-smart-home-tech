@@ -20,7 +20,7 @@ public class WarehouseController implements WarehouseClient {
     }
 
     @Override
-    @PostMapping
+    @PostMapping("/add")
     public void addProductToWarehouse(@RequestBody AddProductToWarehouseRequest request) {
         warehouseService.addProduct(request);
     }
