@@ -9,7 +9,6 @@ import ru.yandex.practicum.commerce.client.WarehouseClient;
 import ru.yandex.practicum.commerce.dto.ChangeProductQuantityRequest;
 import ru.yandex.practicum.commerce.dto.ShoppingCartDto;
 import ru.yandex.practicum.commerce.exception.NoProductsInShoppingCartException;
-import ru.yandex.practicum.commerce.exception.NotAuthorizedUserException;
 
 import java.util.List;
 import java.util.Map;
@@ -24,14 +23,14 @@ public class ShoppingCartService {
 
     @Transactional(readOnly = true)
     public ShoppingCartDto getShoppingCart(String username) {
-        validateUsername(username);
+
         ShoppingCart cart = getOrCreateCart(username);
         return toDto(cart);
     }
 
     @Transactional
     public ShoppingCartDto addProducts(String username, Map<UUID, Long> products) {
-        validateUsername(username);
+
         ShoppingCart cart = getOrCreateCart(username);
 
         cart.getProducts().putAll(products);
@@ -45,7 +44,7 @@ public class ShoppingCartService {
 
     @Transactional
     public void deactivateCart(String username) {
-        validateUsername(username);
+
         ShoppingCart cart = getOrCreateCart(username);
         cart.setActive(false);
         cartRepository.save(cart);
@@ -53,7 +52,7 @@ public class ShoppingCartService {
 
     @Transactional
     public ShoppingCartDto removeProducts(String username, List<UUID> productIds) {
-        validateUsername(username);
+
         ShoppingCart cart = getOrCreateCart(username);
 
         boolean anyFound = productIds.stream().anyMatch(id -> cart.getProducts().containsKey(id));
@@ -68,7 +67,7 @@ public class ShoppingCartService {
 
     @Transactional
     public ShoppingCartDto changeProductQuantity(String username, ChangeProductQuantityRequest request) {
-        validateUsername(username);
+
         ShoppingCart cart = getOrCreateCart(username);
 
         if (!cart.getProducts().containsKey(request.getProductId())) {
@@ -86,13 +85,6 @@ public class ShoppingCartService {
                         .username(username)
                         .build()));
     }
-
-    private void validateUsername(String username) {
-        if (username == null || username.isBlank()) {
-            throw new NotAuthorizedUserException("Username must not be empty");
-        }
-    }
-
     private ShoppingCartDto toDto(ShoppingCart cart) {
         return ShoppingCartDto.builder()
                 .shoppingCartId(cart.getShoppingCartId())
