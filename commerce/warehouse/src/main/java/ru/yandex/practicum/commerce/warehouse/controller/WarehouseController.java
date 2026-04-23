@@ -1,11 +1,13 @@
 package ru.yandex.practicum.commerce.warehouse.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.commerce.client.WarehouseClient;
 import ru.yandex.practicum.commerce.dto.*;
 import ru.yandex.practicum.commerce.warehouse.service.WarehouseService;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/warehouse")
 @RequiredArgsConstructor
@@ -28,6 +30,7 @@ public class WarehouseController implements WarehouseClient {
     @Override
     @PostMapping("/check")
     public BookedProductsDto checkProductAvailabilityForCart(@RequestBody ShoppingCartDto shoppingCartDto) {
+        log.debug("Проверка достаточного количества товаров для корзины {}", shoppingCartDto.getShoppingCartId());
         return warehouseService.checkAvailability(shoppingCartDto);
     }
 
