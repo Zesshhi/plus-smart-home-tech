@@ -6,10 +6,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.commerce.client.ShoppingStoreClient;
 import ru.yandex.practicum.commerce.dto.*;
+import ru.yandex.practicum.commerce.exception.NoSpecifiedProductInWarehouseException;
 import ru.yandex.practicum.commerce.exception.ProductInShoppingCartLowQuantityInWarehouse;
 import ru.yandex.practicum.commerce.exception.ProductNotFoundException;
 import ru.yandex.practicum.commerce.exception.SpecifiedProductAlreadyInWarehouseException;
+import ru.yandex.practicum.commerce.warehouse.model.OrderBooking;
 import ru.yandex.practicum.commerce.warehouse.model.WarehouseProduct;
+import ru.yandex.practicum.commerce.warehouse.repository.OrderBookingRepository;
 import ru.yandex.practicum.commerce.warehouse.repository.WarehouseProductRepository;
 
 import java.security.SecureRandom;
@@ -27,6 +30,7 @@ public class WarehouseService {
             ADDRESSES[Random.from(new SecureRandom()).nextInt(0, ADDRESSES.length)];
 
     private final WarehouseProductRepository warehouseProductRepository;
+    private final OrderBookingRepository orderBookingRepository;
     private final ShoppingStoreClient shoppingStoreClient;
 
     @Transactional
@@ -96,6 +100,67 @@ public class WarehouseService {
                 .house(CURRENT_ADDRESS)
                 .flat(CURRENT_ADDRESS)
                 .build();
+    }
+
+    @Transactional
+    public BookedProductsDto assemblyProductsForOrder(AssemblyProductsForOrderRequest request) {
+        double totalWeight = 0;
+        double totalVolume = 0;
+        boolean fragile = false;
+
+        for (Map.Entry<UUID, Long> entry : request.getProducts().entrySet()) {
+            UUID productId = entry.getKey();
+            long requestedQuantity = entry.getValue();
+
+            WarehouseProduct product = findProduct(productId);
+
+            if (product.getQuantity() < requestedQuantity) {
+                throw new ProductInShoppingCartLowQuantityInWarehouse(
+                        "Not enough stock for product: " + productId);
+            }
+
+            product.setQuantity(product.getQuantity() - requestedQuantity);
+            warehouseProductRepository.save(product);
+            updateQuantityStateInStore(product);
+
+            totalWeight += product.getWeight() * requestedQuantity;
+            totalVolume += product.getWidth() * product.getHeight() * product.getDepth() * requestedQuantity;
+            if (product.isFragile()) {
+                fragile = true;
+            }
+        }
+
+        OrderBooking booking = OrderBooking.builder()
+                .orderId(request.getOrderId())
+                .products(request.getProducts())
+                .build();
+        orderBookingRepository.save(booking);
+
+        return BookedProductsDto.builder()
+                .deliveryWeight(totalWeight)
+                .deliveryVolume(totalVolume)
+                .fragile(fragile)
+                .build();
+    }
+
+    @Transactional
+    public void shippedToDelivery(ShippedToDeliveryRequest request) {
+        OrderBooking booking = orderBookingRepository.findByOrderId(request.getOrderId())
+                .orElseThrow(() -> new NoSpecifiedProductInWarehouseException(
+                        "Бронирование не найдено для заказа: " + request.getOrderId()));
+
+        booking.setDeliveryId(request.getDeliveryId());
+        orderBookingRepository.save(booking);
+    }
+
+    @Transactional
+    public void acceptReturn(Map<UUID, Long> products) {
+        for (Map.Entry<UUID, Long> entry : products.entrySet()) {
+            WarehouseProduct product = findProduct(entry.getKey());
+            product.setQuantity(product.getQuantity() + entry.getValue());
+            warehouseProductRepository.save(product);
+            updateQuantityStateInStore(product);
+        }
     }
 
     private WarehouseProduct findProduct(UUID productId) {

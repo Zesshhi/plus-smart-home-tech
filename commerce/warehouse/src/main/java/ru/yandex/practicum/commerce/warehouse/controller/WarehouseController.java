@@ -1,13 +1,14 @@
 package ru.yandex.practicum.commerce.warehouse.controller;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.commerce.client.WarehouseClient;
 import ru.yandex.practicum.commerce.dto.*;
 import ru.yandex.practicum.commerce.warehouse.service.WarehouseService;
 
-@Slf4j
+import java.util.Map;
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v1/warehouse")
 @RequiredArgsConstructor
@@ -30,7 +31,6 @@ public class WarehouseController implements WarehouseClient {
     @Override
     @PostMapping("/check")
     public BookedProductsDto checkProductAvailabilityForCart(@RequestBody ShoppingCartDto shoppingCartDto) {
-        log.debug("Проверка достаточного количества товаров для корзины {}", shoppingCartDto.getShoppingCartId());
         return warehouseService.checkAvailability(shoppingCartDto);
     }
 
@@ -38,5 +38,23 @@ public class WarehouseController implements WarehouseClient {
     @GetMapping("/address")
     public AddressDto getWarehouseAddress() {
         return warehouseService.getAddress();
+    }
+
+    @Override
+    @PostMapping("/assembly")
+    public BookedProductsDto assemblyProductsForOrder(@RequestBody AssemblyProductsForOrderRequest request) {
+        return warehouseService.assemblyProductsForOrder(request);
+    }
+
+    @Override
+    @PostMapping("/shipped")
+    public void shippedToDelivery(@RequestBody ShippedToDeliveryRequest request) {
+        warehouseService.shippedToDelivery(request);
+    }
+
+    @Override
+    @PostMapping("/return")
+    public void acceptReturn(@RequestBody Map<UUID, Long> products) {
+        warehouseService.acceptReturn(products);
     }
 }
